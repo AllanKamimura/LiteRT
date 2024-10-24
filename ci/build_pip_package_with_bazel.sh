@@ -22,7 +22,7 @@ PYTHON="${CI_BUILD_PYTHON:-python3}"
 VERSION_SUFFIX=${VERSION_SUFFIX:-}
 export TENSORFLOW_DIR="$(pwd)"
 TENSORFLOW_LITE_DIR="${TENSORFLOW_DIR}/tensorflow/lite"
-ARCH="$(uname -m)"
+ARCH="arm64"
 
 export PACKAGE_VERSION="1.0.1"
 export PROJECT_NAME=${WHEEL_PROJECT_NAME:-ai_edge_litert}
@@ -33,7 +33,7 @@ if [ ! -z "${NIGHTLY_RELEASE_DATE}" ]; then
 fi
 
 BUILD_DIR="${TENSORFLOW_DIR}/gen/litert_pip/${PYTHON}"
-TENSORFLOW_TARGET=${TENSORFLOW_TARGET:-$1}
+TENSORFLOW_TARGET="aarch64"#{TENSORFLOW_TARGET:-$1}
 if [ "${TENSORFLOW_TARGET}" = "rpi" ]; then
   export TENSORFLOW_TARGET="armhf"
 fi
@@ -197,7 +197,8 @@ if [[ "${BUILD_DEB}" != "y" ]]; then
   exit 0
 fi
 
-PYTHON_VERSION=$(${PYTHON} -c "import sys;print(sys.version_info.major)")
+PYTHON_VERSION="3.11"#$(${PYTHON} -c "import sys;print(sys.version_info.major)")
+
 if [[ ${PYTHON_VERSION} != 3 ]]; then
   echo "Debian package can only be generated for python3." >&2
   exit 1

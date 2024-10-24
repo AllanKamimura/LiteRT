@@ -43,7 +43,7 @@ else
     '-Wno-sign-compare -Wno-c++20-designator -Wno-gnu-inline-cpp-without-extern'
     'N'
   )
-  printf '%s\n' "${configs[@]}" | ./configure
+  #printf '%s\n' "${configs[@]}" | ./configure
 
   bash /script_dir/build_pip_package_with_bazel.sh
 fi
