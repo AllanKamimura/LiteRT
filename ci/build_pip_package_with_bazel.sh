@@ -23,6 +23,10 @@ VERSION_SUFFIX=${VERSION_SUFFIX:-}
 export TENSORFLOW_DIR="$(pwd)"
 TENSORFLOW_LITE_DIR="${TENSORFLOW_DIR}/tensorflow/lite"
 ARCH="arm64"
+NIGHTLY_RELEASE_DATE="20241024"
+
+export CC=aarch64-linux-gnu-gcc
+export CXX=aarch64-linux-gnu-g++
 
 export PACKAGE_VERSION="1.0.1"
 export PROJECT_NAME=${WHEEL_PROJECT_NAME:-ai_edge_litert}
@@ -33,11 +37,14 @@ if [ ! -z "${NIGHTLY_RELEASE_DATE}" ]; then
 fi
 
 BUILD_DIR="${TENSORFLOW_DIR}/gen/litert_pip/${PYTHON}"
-TENSORFLOW_TARGET="aarch64"#{TENSORFLOW_TARGET:-$1}
+TENSORFLOW_TARGET="aarch64"
+
+#{TENSORFLOW_TARGET:-$1}
 if [ "${TENSORFLOW_TARGET}" = "rpi" ]; then
   export TENSORFLOW_TARGET="armhf"
 fi
-export CROSSTOOL_PYTHON_INCLUDE_PATH=$(${PYTHON} -c "from sysconfig import get_paths as gp; print(gp()['include'])")
+
+echo TENSORFLOW_TARGET="${TENSORFLOW_TARGET}"
 
 # Fix container image for cross build.
 if [ ! -z "${CI_BUILD_HOME}" ] && [ `pwd` = "/workspace" ]; then
@@ -94,6 +101,7 @@ case "${TENSORFLOW_TARGET}" in
     BAZEL_FLAGS="--config=elinux_aarch64
       --define tensorflow_mkldnn_contraction_kernel=0
       --copt=-O3"
+      echo BAZEL FLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGSSSS
     ;;
   native)
     BAZEL_FLAGS="--copt=-O3 --copt=-march=native"
@@ -121,7 +129,7 @@ case "${ARCH}" in
   x86_64)
     ;;
   arm64)
-    BAZEL_FLAGS="${BAZEL_FLAGS} --linkopt="-ld_classic""
+    BAZEL_FLAGS="${BAZEL_FLAGS} --linkopt="-d_classic""
     ;;
   *)
     echo "Unsupported architecture: ${ARCH}"
@@ -129,13 +137,13 @@ case "${ARCH}" in
     ;;
 esac
 
-bazel ${BAZEL_STARTUP_OPTIONS} build -c opt -s --config=monolithic --config=nogcp --config=nonccl \
+bazel ${BAZEL_STARTUP_OPTIONS} build -c opt -s --config=monolithic --config=nogcp --config=nonccl --config=elinux_aarch64 --define PYTHON_INCLUDE_PATH=$CROSSTOOL_PYTHON_INCLUDE_PATH \
   ${BAZEL_FLAGS} ${CUSTOM_BAZEL_FLAGS} //tensorflow/lite/python/interpreter_wrapper:_pywrap_tensorflow_interpreter_wrapper
 
-cp "${TENSORFLOW_DIR}/bazel-bin/tensorflow/lite/python/interpreter_wrapper/_pywrap_tensorflow_interpreter_wrapper${LIBRARY_EXTENSION}" \
+cp "${TENSORFLOW_DIR}/bazel-bin/tensorflow/lite/python/interpreter_wrapper/_pywrap_tensorflow_interpreter_wrapper${LIBRARY_EXTENSION}"  \
    "${BUILD_DIR}/ai_edge_litert"
 
-bazel ${BAZEL_STARTUP_OPTIONS} build -c opt -s --config=monolithic --config=nogcp --config=nonccl \
+bazel ${BAZEL_STARTUP_OPTIONS} build -c opt -s --config=monolithic --config=nogcp --config=nonccl --config=elinux_aarch64 --define PYTHON_INCLUDE_PATH=$CROSSTOOL_PYTHON_INCLUDE_PATH \
   ${BAZEL_FLAGS} ${CUSTOM_BAZEL_FLAGS} //tensorflow/lite/python:schema_py
 
 cp "${TENSORFLOW_DIR}/bazel-bin/tensorflow/lite/python/schema_py_generated.py" \
@@ -160,6 +168,7 @@ case "${TENSORFLOW_TARGET}" in
                        bdist_wheel --plat-name=${WHEEL_PLATFORM_NAME}
     ;;
   aarch64)
+  	echo WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEL
     WHEEL_PLATFORM_NAME="${WHEEL_PLATFORM_NAME:-linux-aarch64}"
     ${PYTHON} setup.py bdist --plat-name=${WHEEL_PLATFORM_NAME} \
                        bdist_wheel --plat-name=${WHEEL_PLATFORM_NAME}
@@ -177,7 +186,13 @@ case "${TENSORFLOW_TARGET}" in
       fi
     elif test -e "/etc/lsb-release"; then
       # Linux
-      WHEEL_PLATFORM_NAME="manylinux_2_17_x86_64"
+      if [[ "${ARCH}" == "arm64" ]]; then
+        # MacOS Silicon
+        WHEEL_PLATFORM_NAME="manylinux_2_17_arm64"
+      else
+        # MacOS Intel
+        WHEEL_PLATFORM_NAME="manylinux_2_17_x86_64"
+      fi
     fi
 
     if [[ -n "${WHEEL_PLATFORM_NAME}" ]]; then

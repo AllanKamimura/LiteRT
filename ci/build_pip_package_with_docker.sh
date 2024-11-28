@@ -17,6 +17,7 @@ set -ex
 
 DOCKER_PYTHON_VERSION="${DOCKER_PYTHON_VERSION:-3.11}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NIGHTLY_RELEASE_DATE="20241024"
 
 if [ ! -d /third_party_tensorflow ]; then
   # Running on host.
@@ -43,7 +44,7 @@ else
     '-Wno-sign-compare -Wno-c++20-designator -Wno-gnu-inline-cpp-without-extern'
     'N'
   )
-  #printf '%s\n' "${configs[@]}" | ./configure
+  printf '%s\n' "${configs[@]}" | ./configure
 
   bash /script_dir/build_pip_package_with_bazel.sh
 fi
